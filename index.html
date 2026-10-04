@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' blob: data:; connect-src 'self'; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
+<meta name="referrer" content="no-referrer">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Receipts">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#f2f2f7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+<title>Receipts</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- Lock screen -->
+<section id="lock" class="screen center">
+  <div class="lock-icon">🔒</div>
+  <h1>Receipts</h1>
+  <p id="lock-msg" class="muted"></p>
+  <button id="lock-btn" class="btn primary big">Unlock</button>
+</section>
+
+<!-- Main list -->
+<section id="main" class="screen" hidden>
+  <header class="bar">
+    <button id="btn-settings" class="link" aria-label="Settings">Settings</button>
+    <h1 id="title">To send</h1>
+    <button id="btn-photos" class="link" aria-label="Add from photo library">Photos</button>
+  </header>
+  <div class="scroll">
+    <div id="empty" class="empty muted" hidden></div>
+    <ul id="list" class="list"></ul>
+  </div>
+  <div id="sendbar" class="sendbar" hidden>
+    <button id="btn-clear" class="btn">Clear</button>
+    <button id="btn-send" class="btn primary grow">Send</button>
+  </div>
+  <nav class="tabbar">
+    <button id="tab-inbox" class="tab active">To send <span id="count-inbox" class="badge"></span></button>
+    <button id="btn-scan" class="scan" aria-label="Scan a receipt">
+      <svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true"><path fill="currentColor" d="M9 3 7.2 5H4a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-3.2L15 3H9Zm3 5.5A4.5 4.5 0 1 1 12 17.5 4.5 4.5 0 0 1 12 8.5Zm0 2A2.5 2.5 0 1 0 12 15.500 2.5 2.5 0 0 0 12 10.500Z"/></svg>
+    </button>
+    <button id="tab-sent" class="tab">Sent <span id="count-sent" class="badge"></span></button>
+  </nav>
+</section>
+
+<!-- Crop -->
+<section id="crop" class="screen dark" hidden>
+  <header class="bar">
+    <button id="crop-cancel" class="link">Cancel</button>
+    <h1>Drag the corners</h1>
+    <button id="crop-done" class="link strong">Done</button>
+  </header>
+  <div id="crop-stage" class="stage"><canvas id="crop-canvas"></canvas></div>
+  <div class="cropbar">
+    <label class="check"><input type="checkbox" id="enhance" checked> Clean up (contrast)</label>
+    <button id="crop-reset" class="link">Reset</button>
+  </div>
+</section>
+
+<!-- Review pages of the current receipt -->
+<section id="review" class="screen" hidden>
+  <header class="bar">
+    <button id="btn-discard" class="link danger">Discard</button>
+    <h1>New receipt</h1>
+    <span></span>
+  </header>
+  <div class="scroll">
+    <ul id="pages" class="pages"></ul>
+    <div class="row">
+      <button id="btn-addpage" class="btn grow">+ Page (camera)</button>
+      <button id="btn-addphoto" class="btn grow">+ Page (photos)</button>
+    </div>
+  </div>
+  <div class="sendbar">
+    <button id="btn-save" class="btn primary grow">Save receipt</button>
+  </div>
+</section>
+
+<!-- Item sheet -->
+<section id="sheet" class="overlay" hidden>
+  <div class="sheet">
+    <img id="sheet-img" alt="Receipt preview">
+    <h2 id="sheet-title"></h2>
+    <p id="sheet-meta" class="muted"></p>
+    <button id="sheet-share" class="btn primary">Share this receipt</button>
+    <button id="sheet-move" class="btn"></button>
+    <button id="sheet-delete" class="btn danger">Delete</button>
+    <button id="sheet-close" class="btn">Close</button>
+  </div>
+</section>
+
+<!-- Settings -->
+<section id="settings" class="screen" hidden>
+  <header class="bar">
+    <span></span>
+    <h1>Settings</h1>
+    <button id="set-close" class="link strong">Done</button>
+  </header>
+  <div class="scroll pad">
+    <label class="field">Bookkeeper email
+      <input id="set-email" type="email" inputmode="email" autocomplete="off" autocapitalize="off" placeholder="name@example.com">
+    </label>
+    <p class="muted small">iOS does not let a web app prefill the recipient. The address is copied to your clipboard when you tap Send, so you can paste it into the To field.</p>
+    <label class="field">Email subject
+      <input id="set-subject" type="text" autocomplete="off" placeholder="Receipts {date}">
+    </label>
+    <p class="muted small">Use {date} and {count} as placeholders.</p>
+    <button id="btn-export" class="btn">Export full archive</button>
+    <button id="btn-relock" class="btn">Reset Face ID lock</button>
+    <p id="storage-info" class="muted small"></p>
+  </div>
+</section>
+
+<!-- Confirm -->
+<section id="confirm" class="overlay" hidden>
+  <div class="dialog">
+    <p id="confirm-text"></p>
+    <button id="confirm-yes" class="btn primary"></button>
+    <button id="confirm-no" class="btn"></button>
+  </div>
+</section>
+
+<div id="toast" class="toast" hidden></div>
+
+<input id="cam" type="file" accept="image/*" capture="environment" hidden>
+<input id="lib" type="file" accept="image/*" hidden>
+
+<script type="module" src="app.js"></script>
+</body>
+</html>
